@@ -8,6 +8,14 @@ import (
 
 type Handler func(*EventCtx)
 
+// Emitter is a channel that emits
+// *Events to be handled upon
+type Emitter func() <-chan *Event
+
+// EmitFunc is the single instance
+// of an emitter. It wil return an event.
+type EmitFunc func() *Event
+
 // EventCtx contains incoming events and wraps
 // them in context
 type EventCtx struct {
@@ -84,18 +92,16 @@ type Eventbus struct {
 	// Map for storing the handlers that handle upon the Events
 	topics map[string][]Handler
 
-	// Handlers is a list of all currently subscribed handlers
-	handlers []Handler
-
-	ctxpool sync.Pool
-	done    chan struct{}
+	emitters []Emitter
+	ctxpool  sync.Pool
+	done     chan struct{}
 }
 
 func NewEventbus() *Eventbus {
 	return &Eventbus{
 		mu:       sync.RWMutex{},
 		topics:   make(map[string][]Handler),
-		handlers: make([]Handler, 0),
+		emitters: make([]Emitter, 0),
 		done:     make(chan struct{}),
 		ctxpool: sync.Pool{
 			New: func() interface{} {
@@ -112,6 +118,10 @@ func (eb *Eventbus) Close() {
 }
 
 func (eb *Eventbus) Emit(event *Event) {
+	if event == nil {
+		return
+	}
+
 	handlers := eb.Handlers(event.Topic())
 	if handlers == nil {
 		return
@@ -164,6 +174,59 @@ func (eb *Eventbus) startTopic(t string) {
 // Make sure to Lock mutex in calling functions
 func (eb *Eventbus) addHandler(topic string, h func(*EventCtx)) {
 	eb.topics[topic] = append(eb.topics[topic], h)
+}
+
+// addEmitter adds an emitter to the eventbus. This is
+// an interal function.
+// Make sure to Lock mutex in calling functions
+func (eb *Eventbus) addEmitter(e func() <-chan *Event) {
+	eb.emitters = append(eb.emitters, Emitter(e))
+}
+
+// ListenTo adds emitters to the eventbus
+func (eb *Eventbus) AddEmitter(e func() <-chan *Event) {
+	eb.mu.Lock()
+	defer eb.mu.Unlock()
+
+	eb.addEmitter(e)
+
+	go func() {
+		for {
+			select {
+			case <-eb.done:
+				return
+			case event := <-e():
+				if event == nil {
+					return
+				}
+				eb.Emit(event)
+			}
+		}
+	}()
+}
+
+func (eb *Eventbus) IntervalEmitterFunc(timer time.Duration, f func() *Event) func() <-chan *Event {
+	return func() <-chan *Event {
+		ev := make(chan *Event)
+
+		go func(chan *Event) {
+			interval := time.NewTicker(timer)
+			muChan := make(chan struct{})
+			for {
+				select {
+				case <-eb.done:
+					return
+				case <-muChan:
+					if e := f(); e != nil {
+						ev <- e
+					}
+				case <-interval.C:
+					muChan <- struct{}{}
+				}
+			}
+		}(ev)
+		return ev
+	}
 }
 
 // TopicHandleFunc constructs a simple handler from a HandlerFunc and
