@@ -66,3 +66,4 @@ Data: Message From Emitter
 ## Considerations
 
 * Be sure to close the returned event channel in an emitter when you're done, otherwise it will linger until the eventbus is closed
+* No Acking/nAcking is implemented yet, possibly in the future. Closing the eventbus/handlers/Emitters will not wait for undelivered events 
