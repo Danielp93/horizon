@@ -41,7 +41,7 @@ type EventCtx struct {
 	eb *Eventbus
 
 	// Meta is a collection of user defined contextual data
-	Meta map[interface{}]interface{}
+	Values map[interface{}]interface{}
 }
 
 func (ctx *EventCtx) UUID() string {
@@ -58,6 +58,10 @@ func (ctx *EventCtx) Topic() string {
 
 func (ctx *EventCtx) Origin() string {
 	return ctx.Event.Origin()
+}
+
+func (ctx *EventCtx) Meta() map[string]string {
+	return ctx.Event.Metadata
 }
 
 func (ctx *EventCtx) Data() interface{} {
@@ -91,7 +95,7 @@ func (ctx *EventCtx) Err() error {
 }
 
 func (ctx *EventCtx) Value(key interface{}) interface{} {
-	if value, ok := ctx.Meta[key]; ok {
+	if value, ok := ctx.Values[key]; ok {
 		return value
 	}
 	return nil
@@ -271,7 +275,7 @@ func (eb *Eventbus) getCtx(e *Event) *EventCtx {
 func (eb *Eventbus) putCtx(ctx *EventCtx) {
 	ctx.Event.SetData(nil)
 	ctx.Event = nil
-	ctx.Meta = nil
+	ctx.Values = nil
 
 	eb.ctxpool.Put(ctx)
 }

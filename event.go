@@ -22,6 +22,9 @@ type Event struct {
 	// Origin is a textual representation of where this event originated from
 	origin string
 
+	// Meta is a key-value pair of other relevant metadata about the event
+	Metadata map[string]string
+
 	// data is the event data that is being passed around
 	data interface{}
 }
