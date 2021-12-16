@@ -15,11 +15,12 @@ func main() {
 
 	ev.StartTopics(topicName)
 
-	ev.Handle(topicName, func(ctx *horizon.EventCtx) {
+	ev.Handle(func(ctx *horizon.EventCtx) {
 		fmt.Println("Topic:", ctx.Topic())
 		fmt.Println("Source:", ctx.Origin())
 		fmt.Println("Data:", ctx.Data())
-	})
+	}, topicName)
+
 	ev.Register(func(done <-chan struct{}) <-chan *horizon.Event {
 		evChan := make(chan *horizon.Event)
 		go func() {

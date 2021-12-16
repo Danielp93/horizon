@@ -26,7 +26,7 @@ func HandleEvents(n int) {
 	ev := NewEventbus()
 	ev.startTopic(topicName)
 
-	ev.Handle(topicName, func(ctx *EventCtx) {})
+	ev.Handle(func(ctx *EventCtx) {}, topicName)
 
 	for i := 0; i < n; i++ {
 		e := NewEvent(topicName, "testOrigin", i)

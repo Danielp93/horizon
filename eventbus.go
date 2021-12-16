@@ -17,17 +17,17 @@ type Emitter func(done <-chan struct{}) <-chan *Event
 // wraps a normal function that emits an event into an emitter to be handled
 func EmitterFunc(f func() *Event) Emitter {
 	return func(done <-chan struct{}) <-chan *Event {
-		ecChan := make(chan *Event)
+		eChan := make(chan *Event)
 		go func() {
-			defer close(ecChan)
+			defer close(eChan)
 
 			select {
 			case <-done:
 				return
-			case ecChan <- f():
+			case eChan <- f():
 			}
 		}()
-		return ecChan
+		return eChan
 	}
 }
 
@@ -232,17 +232,24 @@ func (eb *Eventbus) Register(e Emitter) {
 // subscribes it to the specified topic.
 // will create topic if it doesn't exist yet
 // Will return a reference to the handler to potentially remove it afterwards
-func (eb *Eventbus) Handle(topic string, handler func(*EventCtx)) {
-	if topic == "" {
-		return
-	}
+func (eb *Eventbus) Handle(handler func(*EventCtx), topics ...string) {
 	if handler == nil {
 		return
 	}
 	eb.mu.Lock()
 	defer eb.mu.Unlock()
 
-	eb.addHandler(topic, handler)
+	// Handle case nil (means add to all topics)
+	if topics == nil {
+		for topic := range eb.topics {
+			eb.addHandler(topic, handler)
+		}
+		return
+	}
+
+	for _, topic := range topics {
+		eb.addHandler(topic, handler)
+	}
 }
 
 // Handlers retrieves the that should handle an event
