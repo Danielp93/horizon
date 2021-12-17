@@ -6,8 +6,11 @@ import (
 	"time"
 )
 
-// Event is the interface that will be used to send events around
+// Event is the interface that will be used to implement events
 type Event interface {
+	Timestamp() time.Time
+	UUID() string
+
 	Topic() string
 	Origin() string
 	Data() interface{}
