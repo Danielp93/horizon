@@ -14,8 +14,10 @@ type Event interface {
 	Topic() string
 	Origin() string
 	Data() interface{}
+	Metadata() map[string]string
 
-	SetData(data interface{})
+	SetMetaData(string, string)
+	SetData(interface{})
 }
 
 // Event is the actual event that is being passed around within the eventbus
@@ -95,6 +97,10 @@ func (e *DefaultEvent) Data() interface{} {
 
 func (e *DefaultEvent) Metadata() map[string]string {
 	return e.metadata
+}
+
+func (e *DefaultEvent) SetMetaData(key, value string) {
+	e.metadata[key] = value
 }
 
 // CopyTo copies the Event to another newly allocated one
