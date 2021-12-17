@@ -12,12 +12,12 @@ type Handler func(*EventCtx)
 // receive messages on, and a channel with which we can
 // stop the emitter. It takes a channel which should be closed
 // to signal the Emitter when to stop.
-type Emitter func(done <-chan struct{}) <-chan *Event
+type Emitter func(done <-chan struct{}) <-chan Event
 
 // wraps a normal function that emits an event into an emitter to be handled
-func EmitterFunc(f func() *Event) Emitter {
-	return func(done <-chan struct{}) <-chan *Event {
-		eChan := make(chan *Event)
+func EmitterFunc(f func() Event) Emitter {
+	return func(done <-chan struct{}) <-chan Event {
+		eChan := make(chan Event)
 		go func() {
 			defer close(eChan)
 
@@ -35,37 +35,13 @@ func EmitterFunc(f func() *Event) Emitter {
 // them in context
 type EventCtx struct {
 	// Incoming Event
-	*Event
+	Event
 
 	// EventBus that this event is being handled on
 	eb *Eventbus
 
 	// Meta is a collection of user defined contextual data
 	Values map[interface{}]interface{}
-}
-
-func (ctx *EventCtx) UUID() string {
-	return ctx.Event.UUID()
-}
-
-func (ctx *EventCtx) Timestamp() time.Time {
-	return ctx.Event.Timestamp()
-}
-
-func (ctx *EventCtx) Topic() string {
-	return ctx.Event.Topic()
-}
-
-func (ctx *EventCtx) Origin() string {
-	return ctx.Event.Origin()
-}
-
-func (ctx *EventCtx) Meta() map[string]string {
-	return ctx.Event.Metadata
-}
-
-func (ctx *EventCtx) Data() interface{} {
-	return ctx.Event.Data()
 }
 
 // Following (ctx *EventCtx) functions are to implement the context.Context Interface
@@ -136,7 +112,7 @@ func (eb *Eventbus) Close() {
 	}
 }
 
-func (eb *Eventbus) Emit(event *Event) {
+func (eb *Eventbus) Emit(event Event) {
 	if event == nil {
 		return
 	}
@@ -265,7 +241,7 @@ func (eb *Eventbus) Handlers(topic string) []Handler {
 	return eb.topics[topic]
 }
 
-func (eb *Eventbus) getCtx(e *Event) *EventCtx {
+func (eb *Eventbus) getCtx(e Event) *EventCtx {
 	var ctx *EventCtx
 	v := eb.ctxpool.Get()
 	if ctx == nil {

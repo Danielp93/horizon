@@ -21,8 +21,8 @@ func main() {
 		fmt.Println("Data:", ctx.Data())
 	}, topicName)
 
-	ev.Register(func(done <-chan struct{}) <-chan *horizon.Event {
-		evChan := make(chan *horizon.Event)
+	ev.Register(func(done <-chan struct{}) <-chan horizon.Event {
+		evChan := make(chan horizon.Event)
 		go func() {
 			defer close(evChan)
 			evChan <- horizon.NewEvent(topicName, "Emitter", fmt.Sprintf("%s\n", "Message From Emitter"))
@@ -30,7 +30,7 @@ func main() {
 		return evChan
 	})
 
-	ev.Register(horizon.EmitterFunc(func() *horizon.Event {
+	ev.Register(horizon.EmitterFunc(func() horizon.Event {
 		return horizon.NewEvent(topicName, "horizon", 1)
 	}))
 

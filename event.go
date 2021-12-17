@@ -6,10 +6,19 @@ import (
 	"time"
 )
 
+// Event is the interface that will be used to send events around
+type Event interface {
+	Topic() string
+	Origin() string
+	Data() interface{}
+
+	SetData(data interface{})
+}
+
 // Event is the actual event that is being passed around within the eventbus
 // Meta-Fields like UUID are already provided, if more are needed one can add them in the
 // Meta field
-type Event struct {
+type DefaultEvent struct {
 	// UUID is a unique identifier for this Event
 	uuid string
 
@@ -23,68 +32,71 @@ type Event struct {
 	origin string
 
 	// Metadata is a key-value pair of other relevant metadata about the event
-	Metadata map[string]string
+	metadata map[string]string
 
 	// data is the event data that is being passed around
 	data interface{}
 }
 
-func NewEvent(topic string, origin string, data interface{}) *Event {
+func NewEvent(topic string, origin string, data interface{}) Event {
 	var uuid [8]byte
 	rand.Read(uuid[:])
-	return &Event{
+	return &DefaultEvent{
 		uuid:      hex.EncodeToString(uuid[:]),
 		timestamp: time.Now(),
 		topic:     topic,
 		origin:    origin,
 		data:      data,
-		Metadata:  make(map[string]string),
 	}
 }
 
-func (e *Event) SetUUID(uuid string) {
+func (e *DefaultEvent) SetUUID(uuid string) {
 	e.uuid = uuid
 }
 
-func (e *Event) UUID() string {
+func (e *DefaultEvent) UUID() string {
 	return e.uuid
 }
 
-func (e *Event) SetTimestamp(timestamp time.Time) {
+func (e *DefaultEvent) SetTimestamp(timestamp time.Time) {
 	e.timestamp = timestamp
 }
 
-func (e *Event) Timestamp() time.Time {
+func (e *DefaultEvent) Timestamp() time.Time {
 	return e.timestamp
 }
 
-func (e *Event) SetTopic(topic string) {
+func (e *DefaultEvent) SetTopic(topic string) {
 	e.topic = topic
 }
 
-func (e *Event) Topic() string {
+func (e *DefaultEvent) Topic() string {
 	return e.topic
 }
 
-func (e *Event) SetOrigin(origin string) {
+func (e *DefaultEvent) SetOrigin(origin string) {
 	e.origin = origin
 }
 
-func (e *Event) Origin() string {
+func (e *DefaultEvent) Origin() string {
 	return e.origin
 }
 
-func (e *Event) SetData(data interface{}) {
+func (e *DefaultEvent) SetData(data interface{}) {
 	e.data = data
 }
 
-func (e *Event) Data() interface{} {
+func (e *DefaultEvent) Data() interface{} {
 	return e.data
+}
+
+func (e *DefaultEvent) Metadata() map[string]string {
+	return e.metadata
 }
 
 // CopyTo copies the Event to another newly allocated one
 // BE AWARE that data is NOT copied via deepCopy
-func (e *Event) CopyTo(ev *Event) {
+func (e *DefaultEvent) CopyTo(ev *DefaultEvent) {
 	ev.SetTopic(e.topic)
 	ev.SetOrigin(e.origin)
 	ev.SetData(e.Data())
