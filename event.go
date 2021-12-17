@@ -22,8 +22,8 @@ type Event struct {
 	// Origin is a textual representation of where this event originated from
 	origin string
 
-	// Meta is a key-value pair of other relevant metadata about the event
-	Metadata map[string]string
+	// Metadata is a key-value pair of other relevant metadata about the event
+	metadata map[string]string
 
 	// data is the event data that is being passed around
 	data interface{}
@@ -38,6 +38,7 @@ func NewEvent(topic string, origin string, data interface{}) *Event {
 		topic:     topic,
 		origin:    origin,
 		data:      data,
+		metadata:  make(map[string]string),
 	}
 }
 
@@ -79,6 +80,10 @@ func (e *Event) SetData(data interface{}) {
 
 func (e *Event) Data() interface{} {
 	return e.data
+}
+
+func (e *Event) Metadata() map[string]string {
+	return e.metadata
 }
 
 // CopyTo copies the Event to another newly allocated one

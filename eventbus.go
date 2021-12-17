@@ -61,7 +61,7 @@ func (ctx *EventCtx) Origin() string {
 }
 
 func (ctx *EventCtx) Meta() map[string]string {
-	return ctx.Event.Metadata
+	return ctx.Event.Metadata()
 }
 
 func (ctx *EventCtx) Data() interface{} {
