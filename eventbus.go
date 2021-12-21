@@ -77,6 +77,10 @@ func (ctx *EventCtx) Value(key interface{}) interface{} {
 	return nil
 }
 
+func (ctx *EventCtx) Respond(event Event) {
+	ctx.eb.Emit(event)
+}
+
 // compile error if EventCtx doesn't implement context.Context interface
 var _ context.Context = &EventCtx{}
 
