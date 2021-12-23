@@ -37,13 +37,15 @@ func main() {
 
 	ev.StartTopics(topicName)
 
-	ev.Handle(topicName, func(ctx *horizon.EventCtx) {
+	ev.Handle(func(ctx *horizon.EventCtx) {
 		fmt.Println("Topic:", ctx.Topic())
 		fmt.Println("Source:", ctx.Origin())
 		fmt.Println("Data:", ctx.Data())
-	})
-	ev.Register(func(done <-chan struct{}) <-chan *horizon.Event {
-		evChan := make(chan *horizon.Event)
+	}, topicName)
+
+	// Create a full Emitter
+	ev.Register(func(done <-chan struct{}) <-chan horizon.Event {
+		evChan := make(chan horizon.Event)
 		go func() {
 			defer close(evChan)
 			evChan <- horizon.NewEvent(topicName, "Emitter", fmt.Sprintf("%s\n", "Message From Emitter"))
@@ -51,16 +53,27 @@ func main() {
 		return evChan
 	})
 
-	// Sleep for a sec to give event time to be handled
-	time.Sleep(time.Second)
+	ev.Register(horizon.EmitterFunc(func() horizon.Event {
+		return horizon.NewEvent(topicName, "EmitEvery1Second", time.Now().String())
+	}).Interval(1 * time.Second))
+
+	// very ugly block until ctrl-C
+	select {}
 }
 ```
 
 ```bash
 $ go run examples/main.go 
 Topic: TopicName
+Source: EmitEvery1Second
+Topic: TopicName
 Source: Emitter
 Data: Message From Emitter
+
+Topic: TopicName
+Source: EmitOnceFunc
+Data: 1
+Data: 2021-12-23 14:48:20.4377732 +0100 CET m=+0.000097001
 ```
 
 ## Considerations

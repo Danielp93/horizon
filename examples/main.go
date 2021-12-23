@@ -32,11 +32,7 @@ func main() {
 	})
 
 	ev.Register(horizon.EmitterFunc(func() horizon.Event {
-		return horizon.NewEvent(topicName, "EmitOnceFunc", 1)
-	}).Once())
-
-	ev.Register(horizon.EmitterFunc(func() horizon.Event {
-		return horizon.NewEvent(topicName, "EmitEvery1Second", time.Now())
+		return horizon.NewEvent(topicName, "EmitEvery1Second", time.Now().String())
 	}).Interval(1 * time.Second))
 
 	// very ugly block until ctrl-C
