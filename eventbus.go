@@ -14,8 +14,11 @@ type Handler func(*EventCtx)
 // to signal the Emitter when to stop.
 type Emitter func(done <-chan struct{}) <-chan Event
 
-// wraps a normal function that emits an event into an emitter to be handled
-func EmitterFunc(f func() Event) Emitter {
+// EmitterFunc is an function that emits a single event
+type EmitterFunc func() Event
+
+// Wraps a one-shot emitter in an Emitter type so that it can be handled
+func (e EmitterFunc) Once() Emitter {
 	return func(done <-chan struct{}) <-chan Event {
 		eChan := make(chan Event)
 		go func() {
@@ -24,10 +27,39 @@ func EmitterFunc(f func() Event) Emitter {
 			select {
 			case <-done:
 				return
-			case eChan <- f():
+			case eChan <- e():
 			}
 		}()
 		return eChan
+	}
+}
+
+// Interval Wraps the original emitterfunc in an Emitter that
+// calls watcherfunc `f` every `t`.
+func (e EmitterFunc) Interval(t time.Duration) Emitter {
+	return func(done <-chan struct{}) <-chan Event {
+		ec := make(chan Event)
+		interval := time.NewTicker(t)
+		muChan := make(chan struct{}, 1)
+
+		muChan <- struct{}{}
+		go func() {
+			defer close(ec)
+
+			for {
+				select {
+				case <-done:
+					return
+				case <-muChan:
+					if e := e(); e != nil {
+						ec <- e
+					}
+				case <-interval.C:
+					muChan <- struct{}{}
+				}
+			}
+		}()
+		return ec
 	}
 }
 

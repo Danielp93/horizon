@@ -21,6 +21,7 @@ func main() {
 		fmt.Println("Data:", ctx.Data())
 	}, topicName)
 
+	// Create a full Emitter
 	ev.Register(func(done <-chan struct{}) <-chan horizon.Event {
 		evChan := make(chan horizon.Event)
 		go func() {
@@ -31,9 +32,13 @@ func main() {
 	})
 
 	ev.Register(horizon.EmitterFunc(func() horizon.Event {
-		return horizon.NewEvent(topicName, "horizon", 1)
-	}))
+		return horizon.NewEvent(topicName, "EmitOnceFunc", 1)
+	}).Once())
 
-	// Sleep for a sec to give event time to be handled
-	time.Sleep(time.Second)
+	ev.Register(horizon.EmitterFunc(func() horizon.Event {
+		return horizon.NewEvent(topicName, "EmitEvery1Second", time.Now())
+	}).Interval(1 * time.Second))
+
+	// very ugly block until ctrl-C
+	select {}
 }
